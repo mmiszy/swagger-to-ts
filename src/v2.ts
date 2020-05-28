@@ -1,5 +1,6 @@
 import propertyMapper from "./property-mapper";
 import { OpenAPI2, OpenAPI2SchemaObject, SwaggerToTSOptions } from "./types";
+import { OpenAPI2ParameterObject, OpenAPI2Reference } from "./types/OpenAPI2";
 import {
   comment,
   nodeType,
@@ -66,7 +67,10 @@ export default function generateTypesV2(
           return `{ [key: string]: any }`;
         }
 
-        let properties = createKeys(node.properties || {}, node.required);
+        let properties = definitionsToTypes(
+          node.properties || {},
+          node.required
+        );
 
         // if additional properties, add to end of properties
         if (node.additionalProperties) {
@@ -89,10 +93,14 @@ export default function generateTypesV2(
     return "";
   }
 
-  function createKeys(
-    obj: { [key: string]: any },
+  function definitionsToTypes(
+    obj: OpenAPI2["definitions"],
     required: string[] = []
   ): string {
+    if (!obj) {
+      return "";
+    }
+
     let output = "";
 
     Object.entries(obj).forEach(([key, value]) => {
@@ -114,8 +122,133 @@ export default function generateTypesV2(
     return output;
   }
 
+  function capitalize(str: string | number): string {
+    return String(str).replace(/^(.{1})/, (l) => l.toUpperCase());
+  }
+
+  function pathsToTypes(obj: OpenAPI2["paths"]): string {
+    if (!obj) {
+      return "";
+    }
+
+    let output = "";
+
+    Object.values(obj).forEach((pathItemObject) => {
+      Object.values(pathItemObject).forEach((operationObject) => {
+        const endpointName = operationObject.operationId;
+
+        type OtherTypesOfParams = Exclude<
+          OpenAPI2ParameterObject["in"],
+          "body"
+        >;
+        type GroupedParams = {
+          body?: {
+            required?: boolean;
+            schema: OpenAPI2SchemaObject | OpenAPI2Reference;
+          };
+        } & {
+          [key in OtherTypesOfParams]?: {
+            [k: string]: OpenAPI2ParameterObject;
+          };
+        };
+
+        if (operationObject.parameters) {
+          const groupedParameters = Object.values(
+            operationObject.parameters
+          ).reduce<GroupedParams>((params, parameterObject) => {
+            if (parameterObject.in === "body") {
+              params[parameterObject.in] = parameterObject;
+            } else {
+              const newValue = params[parameterObject.in] || {};
+              newValue[parameterObject.name] = parameterObject;
+              params[parameterObject.in] = newValue;
+            }
+            return params;
+          }, {});
+
+          Object.entries(groupedParameters).forEach(([key, paramGroup]) => {
+            if (!paramGroup) {
+              return;
+            }
+
+            const paramGroupName = key as keyof typeof groupedParameters;
+            const groupNameToTypeName: Record<typeof paramGroupName, string> = {
+              body: "Body",
+              query: "Query",
+              header: "Headers",
+              formData: "FormData",
+              path: "PathParams",
+            };
+
+            if (paramGroupName === "body") {
+              output += `${endpointName}Request${groupNameToTypeName[paramGroupName]}: `;
+              output += transform(paramGroup.schema as any);
+              output += ";\n";
+            } else {
+              output += `${endpointName}Request${groupNameToTypeName[paramGroupName]}: `;
+              output += "{\n";
+              Object.entries(paramGroup).forEach(([, schema]) => {
+                const parameterObject = schema as OpenAPI2ParameterObject;
+
+                output += `"${parameterObject.name}"${
+                  !parameterObject.required ? "?" : ""
+                }: `;
+                output += transform(parameterObject as any);
+                output += ";\n";
+              });
+              output += "};\n";
+            }
+          });
+        }
+
+        Object.entries(operationObject.responses).forEach(
+          ([key, responseObject]) => {
+            if (!responseObject) {
+              return;
+            }
+
+            // @todo refs?
+            if ("$ref" in responseObject) {
+              return;
+            }
+
+            const responseType = key as keyof typeof operationObject.responses;
+
+            output += "\n";
+
+            let descriptionAndSummary = "";
+            if (operationObject.description) {
+              descriptionAndSummary += `@description ${operationObject.description}`;
+            }
+
+            if (operationObject.summary) {
+              const responseDescription = responseObject.description || "";
+              if (descriptionAndSummary) {
+                descriptionAndSummary += '\n';
+              }
+              descriptionAndSummary += `@summary ${operationObject.summary} ${responseType} ${responseDescription} response`
+            }
+
+            if (descriptionAndSummary) {
+              output += comment(descriptionAndSummary);
+            }
+
+            output += `${endpointName}${capitalize(responseType)}Response: `;
+
+            output += transform(responseObject.schema);
+
+            output += ";\n";
+          }
+        );
+      });
+    });
+
+    return output;
+  }
+
   // note: make sure that base-level definitions are required
   return `export interface definitions {
-    ${createKeys(propertyMapped, Object.keys(propertyMapped))}
+    ${definitionsToTypes(propertyMapped, Object.keys(propertyMapped))}
+    ${pathsToTypes(schema.paths)}
   }`;
 }
