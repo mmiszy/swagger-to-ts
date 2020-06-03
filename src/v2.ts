@@ -212,6 +212,11 @@ export default function generateTypesV2(
               return;
             }
 
+            // Some tools generate responses without schemas, nothing to do here
+            if (!responseObject.schema) {
+              return;
+            }
+
             const responseType = key as keyof typeof operationObject.responses;
 
             output += "\n";
@@ -224,9 +229,9 @@ export default function generateTypesV2(
             if (operationObject.summary) {
               const responseDescription = responseObject.description || "";
               if (descriptionAndSummary) {
-                descriptionAndSummary += '\n';
+                descriptionAndSummary += "\n";
               }
-              descriptionAndSummary += `@summary ${operationObject.summary} ${responseType} ${responseDescription} response`
+              descriptionAndSummary += `@summary ${operationObject.summary} ${responseType} ${responseDescription} response`;
             }
 
             if (descriptionAndSummary) {

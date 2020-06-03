@@ -115,7 +115,7 @@ export type OpenAPI2ResponsesObject = {
 
 export type OpenAPI2ResponseObject = {
   description: string;
-  schema: OpenAPI2SchemaObject;
+  schema?: OpenAPI2SchemaObject | OpenAPI2Reference;
 };
 
 export type OpenAPI2ParameterType =
