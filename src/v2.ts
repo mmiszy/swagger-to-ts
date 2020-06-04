@@ -123,7 +123,17 @@ export default function generateTypesV2(
   }
 
   function capitalize(str: string | number): string {
-    return String(str).replace(/^(.{1})/, (l) => l.toUpperCase());
+    return String(str).replace(/^\w/, (l) => l.toUpperCase());
+  }
+
+  function pathToTypeName(str: string): string {
+    return capitalize(
+      str
+        // get rid of slashes, dashes and opening braces
+        .replace(/[\/\-{](\w)/g, (_, letter) => letter.toUpperCase())
+        // remove all non-alpha characters
+        .replace(/\W/g, "")
+    );
   }
 
   function pathsToTypes(obj: OpenAPI2["paths"]): string {
@@ -133,9 +143,11 @@ export default function generateTypesV2(
 
     let output = "";
 
-    Object.values(obj).forEach((pathItemObject) => {
-      Object.values(pathItemObject).forEach((operationObject) => {
-        const endpointName = operationObject.operationId;
+    Object.entries(obj).forEach(([path, pathItemObject]) => {
+      Object.entries(pathItemObject).forEach(([key, operationObject]) => {
+        const method = key as keyof typeof pathItemObject;
+        const endpointName = method + pathToTypeName(path);
+        // const endpointName = operationObject.operationId;
 
         type OtherTypesOfParams = Exclude<
           OpenAPI2ParameterObject["in"],
