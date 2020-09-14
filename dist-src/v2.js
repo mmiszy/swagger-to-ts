@@ -83,10 +83,13 @@ export default function generateTypesV2(schema, options) {
             return "";
         }
         let output = "";
+        let outputPerPath = "";
         Object.entries(obj).forEach(([path, pathItemObject]) => {
+            outputPerPath += `'${path}': {`;
             Object.entries(pathItemObject).forEach(([key, operationObject]) => {
                 const method = key;
                 const endpointName = method + pathToTypeName(path);
+                outputPerPath += `${method.toUpperCase()}: {`;
                 if (operationObject.parameters) {
                     const groupedParameters = Object.values(operationObject.parameters).reduce((params, parameterObject) => {
                         if (parameterObject.in === "body") {
@@ -113,19 +116,28 @@ export default function generateTypesV2(schema, options) {
                         };
                         if (paramGroupName === "body") {
                             output += `${endpointName}Request${groupNameToTypeName[paramGroupName]}: `;
+                            outputPerPath += `request${groupNameToTypeName[paramGroupName]}: `;
                             output += transform(paramGroup.schema);
+                            outputPerPath += transform(paramGroup.schema);
                             output += ";\n";
+                            outputPerPath += ";\n";
                         }
                         else {
                             output += `${endpointName}Request${groupNameToTypeName[paramGroupName]}: `;
+                            outputPerPath += `request${groupNameToTypeName[paramGroupName]}: `;
                             output += "{\n";
+                            outputPerPath += "{\n";
                             Object.entries(paramGroup).forEach(([, schema]) => {
                                 const parameterObject = schema;
                                 output += `"${parameterObject.name}"${!parameterObject.required ? "?" : ""}: `;
+                                outputPerPath += `"${parameterObject.name}"${!parameterObject.required ? "?" : ""}: `;
                                 output += transform(parameterObject);
+                                outputPerPath += transform(parameterObject);
                                 output += ";\n";
+                                outputPerPath += ";\n";
                             });
                             output += "};\n";
+                            outputPerPath += "};\n";
                         }
                     });
                 }
@@ -141,6 +153,7 @@ export default function generateTypesV2(schema, options) {
                     }
                     const responseType = key;
                     output += "\n";
+                    outputPerPath += "\n";
                     let descriptionAndSummary = "";
                     if (operationObject.description) {
                         descriptionAndSummary += `@description ${operationObject.description}`;
@@ -154,14 +167,20 @@ export default function generateTypesV2(schema, options) {
                     }
                     if (descriptionAndSummary) {
                         output += comment(descriptionAndSummary);
+                        outputPerPath += comment(descriptionAndSummary);
                     }
                     output += `${endpointName}${capitalize(responseType)}Response: `;
+                    outputPerPath += `response: `;
                     output += transform(responseObject.schema);
+                    outputPerPath += transform(responseObject.schema);
                     output += ";\n";
+                    outputPerPath += ";\n";
                 });
+                outputPerPath += `};`;
             });
+            outputPerPath += `};`;
         });
-        return output;
+        return output + "\n" + `pathsDefinitions: { ${outputPerPath} }`;
     }
     return `export interface definitions {
     ${definitionsToTypes(propertyMapped, Object.keys(propertyMapped))}
