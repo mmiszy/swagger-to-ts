@@ -142,12 +142,16 @@ export default function generateTypesV2(
     }
 
     let output = "";
+    let outputPerPath = "";
 
     Object.entries(obj).forEach(([path, pathItemObject]) => {
+      outputPerPath += `'${path}': {`;
       Object.entries(pathItemObject).forEach(([key, operationObject]) => {
         const method = key as keyof typeof pathItemObject;
         const endpointName = method + pathToTypeName(path);
         // const endpointName = operationObject.operationId;
+
+        outputPerPath += `${method.toUpperCase()}: {`;
 
         type OtherTypesOfParams = Exclude<
           OpenAPI2ParameterObject["in"],
@@ -194,21 +198,32 @@ export default function generateTypesV2(
 
             if (paramGroupName === "body") {
               output += `${endpointName}Request${groupNameToTypeName[paramGroupName]}: `;
+              outputPerPath += `request${groupNameToTypeName[paramGroupName]}: `;
               output += transform(paramGroup.schema as any);
+              outputPerPath += transform(paramGroup.schema as any);
               output += ";\n";
+              outputPerPath += ";\n";
             } else {
               output += `${endpointName}Request${groupNameToTypeName[paramGroupName]}: `;
+              outputPerPath += `request${groupNameToTypeName[paramGroupName]}: `;
               output += "{\n";
+              outputPerPath += "{\n";
               Object.entries(paramGroup).forEach(([, schema]) => {
                 const parameterObject = schema as OpenAPI2ParameterObject;
 
                 output += `"${parameterObject.name}"${
                   !parameterObject.required ? "?" : ""
                 }: `;
+                outputPerPath += `"${parameterObject.name}"${
+                  !parameterObject.required ? "?" : ""
+                }: `;
                 output += transform(parameterObject as any);
+                outputPerPath += transform(parameterObject as any);
                 output += ";\n";
+                outputPerPath += ";\n";
               });
               output += "};\n";
+              outputPerPath += "};\n";
             }
           });
         }
@@ -232,6 +247,7 @@ export default function generateTypesV2(
             const responseType = key as keyof typeof operationObject.responses;
 
             output += "\n";
+            outputPerPath += "\n";
 
             let descriptionAndSummary = "";
             if (operationObject.description) {
@@ -248,19 +264,25 @@ export default function generateTypesV2(
 
             if (descriptionAndSummary) {
               output += comment(descriptionAndSummary);
+              outputPerPath += comment(descriptionAndSummary);
             }
 
             output += `${endpointName}${capitalize(responseType)}Response: `;
+            outputPerPath += `response: `;
 
             output += transform(responseObject.schema);
+            outputPerPath += transform(responseObject.schema);
 
             output += ";\n";
+            outputPerPath += ";\n";
           }
         );
+        outputPerPath += `};`;
       });
+      outputPerPath += `};`;
     });
 
-    return output;
+    return output + "\n" + `pathsDefinitions: { ${outputPerPath} }`;
   }
 
   // note: make sure that base-level definitions are required
