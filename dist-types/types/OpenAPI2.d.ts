@@ -71,6 +71,7 @@ export interface OpenAPI2SchemaObject {
     required?: string[];
     title?: string;
     type?: OpenAPI2Type;
+    "x-alternatives"?: (OpenAPI2SchemaObject | OpenAPI2Reference)[];
     [key: string]: any;
 }
 export {};

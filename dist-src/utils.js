@@ -11,6 +11,9 @@ export function nodeType(obj) {
     if (!obj || typeof obj !== "object") {
         return undefined;
     }
+    if (Array.isArray(obj["x-alternatives"])) {
+        return "x-alternatives";
+    }
     if (obj["$ref"]) {
         return "ref";
     }

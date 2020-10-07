@@ -72,6 +72,10 @@ function nodeType(obj) {
     return undefined;
   }
 
+  if (Array.isArray(obj["x-alternatives"])) {
+    return "x-alternatives";
+  }
+
   if (obj["$ref"]) {
     return "ref";
   }
@@ -225,6 +229,13 @@ function generateTypesV2(schema, options) {
       case "array":
         {
           return tsArrayOf(transform(node.items));
+        }
+
+      case "x-alternatives":
+        {
+          var _node$xAlternatives;
+
+          return tsUnionOf(((_node$xAlternatives = node["x-alternatives"]) === null || _node$xAlternatives === void 0 ? void 0 : _node$xAlternatives.map(transform)) || []);
         }
     }
 
