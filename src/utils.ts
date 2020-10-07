@@ -22,10 +22,15 @@ type SchemaObjectType =
   | "object"
   | "oneOf"
   | "ref"
-  | "string";
+  | "string"
+  | "x-alternatives";
 export function nodeType(obj: any): SchemaObjectType | undefined {
   if (!obj || typeof obj !== "object") {
     return undefined;
+  }
+
+  if (Array.isArray(obj["x-alternatives"])) {
+    return "x-alternatives";
   }
 
   if (obj["$ref"]) {

@@ -183,5 +183,6 @@ export interface OpenAPI2SchemaObject {
   required?: string[];
   title?: string;
   type?: OpenAPI2Type; // allow this to be optional to cover cases when this is missing
+  "x-alternatives"?: (OpenAPI2SchemaObject | OpenAPI2Reference)[];
   [key: string]: any; // allow arbitrary x-something properties
 }
