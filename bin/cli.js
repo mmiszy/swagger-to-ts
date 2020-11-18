@@ -15,6 +15,7 @@ Options
   --help                display this
   --output, -o          specify output file
   --prettier-config     (optional) specify path to Prettier config file
+  --fileType            (optional) specify TypeScript type used for fields of type "file"
 `,
   {
     flags: {
@@ -25,6 +26,9 @@ Options
       prettierConfig: {
         type: "string",
       },
+      fileType: {
+        type: "string"
+      }
     },
   }
 );
@@ -47,6 +51,7 @@ const timeStart = process.hrtime();
 
   const result = swaggerToTS(spec, {
     prettierConfig: cli.flags.prettierConfig,
+    fileType: cli.flags.fileType,
   });
 
   // Write to file if specifying output

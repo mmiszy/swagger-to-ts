@@ -20,6 +20,9 @@ export function nodeType(obj) {
     if (Array.isArray(obj.enum)) {
         return "enum";
     }
+    if (obj.type === "file") {
+        return "file";
+    }
     if (obj.type === "boolean") {
         return "boolean";
     }

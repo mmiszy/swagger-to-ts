@@ -84,6 +84,10 @@ function nodeType(obj) {
     return "enum";
   }
 
+  if (obj.type === "file") {
+    return "file";
+  }
+
   if (obj.type === "boolean") {
     return "boolean";
   }
@@ -229,6 +233,11 @@ function generateTypesV2(schema, options) {
       case "array":
         {
           return tsArrayOf(transform(node.items));
+        }
+
+      case "file":
+        {
+          return (options === null || options === void 0 ? void 0 : options.fileType) || "any";
         }
 
       case "x-alternatives":

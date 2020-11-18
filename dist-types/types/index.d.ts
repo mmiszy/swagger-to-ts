@@ -9,5 +9,6 @@ export interface Property {
 }
 export interface SwaggerToTSOptions {
     prettierConfig?: string;
+    fileType?: string;
     propertyMapper?: (schemaObject: OpenAPI2SchemaObject | OpenAPI3SchemaObject, property: Property) => Property;
 }
