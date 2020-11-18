@@ -13,6 +13,7 @@ export interface Property {
 export interface SwaggerToTSOptions {
   /** (optional) Path to Prettier config */
   prettierConfig?: string;
+  fileType?: string;
   /** (optional) Function to iterate over every schema object before transforming to TypeScript */
   propertyMapper?: (
     schemaObject: OpenAPI2SchemaObject | OpenAPI3SchemaObject,

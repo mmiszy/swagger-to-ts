@@ -23,6 +23,7 @@ type SchemaObjectType =
   | "oneOf"
   | "ref"
   | "string"
+  | "file"
   | "x-alternatives";
 export function nodeType(obj: any): SchemaObjectType | undefined {
   if (!obj || typeof obj !== "object") {
@@ -40,6 +41,10 @@ export function nodeType(obj: any): SchemaObjectType | undefined {
   // enum
   if (Array.isArray(obj.enum)) {
     return "enum";
+  }
+
+  if (obj.type === "file") {
+    return "file";
   }
 
   // boolean

@@ -88,6 +88,9 @@ export default function generateTypesV2(
       case "array": {
         return tsArrayOf(transform(node.items as any));
       }
+      case "file": {
+        return options?.fileType || "any";
+      }
       case "x-alternatives": {
         return tsUnionOf(node["x-alternatives"]?.map(transform) || []);
       }
