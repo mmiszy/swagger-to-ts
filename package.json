@@ -1,7 +1,7 @@
 {
   "name": "@manifoldco/swagger-to-ts",
   "description": "Generate TypeScript types from Swagger OpenAPI specs",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "license": "ISC",
   "bin": {
     "swagger-to-ts": "bin/cli.js"
